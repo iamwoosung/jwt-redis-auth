@@ -1,10 +1,8 @@
 from typing import List
 from fastapi import Depends, FastAPI, HTTPException
-from sqlalchemy import select
-from app.database import Base, engine, get_db
-from app.models.post import Post
+from app.apis import auth, user
+from app.database import Base, engine
 from app.schemas.post import PostResponse, PostCreate, PostUpdate
-from sqlalchemy.orm import Session
 from app.services.post_service import get_post_service, PostService
 
 app = FastAPI(
@@ -15,6 +13,9 @@ app = FastAPI(
     docs_url="/docs", 
     redoc_url="/redoc"
 )
+
+app.include_router(user.router, tags=["user"])
+app.include_router(auth.router, tags=["auth"])
 
 @app.get("/")
 def health_check():
