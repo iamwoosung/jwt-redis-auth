@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
+from app.models.user import User
 from app.schemas.post import PostCreate, PostUpdate
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -15,8 +16,13 @@ class PostService:
     """
     게시글 생성
     """
-    def create_post(self, post: PostCreate):
+    def create_post(self, post: PostCreate, user: User):
+
+
         created_post = Post(**post.model_dump())
+        
+        author_id = user.id
+        created_post.author_id = author_id
         
         self.db.add(created_post)
         self.db.commit()
@@ -54,7 +60,7 @@ class PostService:
     게시글 수정
     작성자만 수정 가능
     """
-    def update_post(self, post_id: int, post_update: PostUpdate):
+    def update_post(self, post_id: int, post_update: PostUpdate, user: User):
         query = (
             select(Post).
             where(Post.id == post_id)
@@ -64,6 +70,11 @@ class PostService:
         if post is None:
             return None
         
+        if post.author_id != user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="접근 권한이 없습니다."
+            )
         
         update_dict = {
             key: value
@@ -83,7 +94,7 @@ class PostService:
     게시글 삭제
     작성자만 삭제 가능
     """
-    def delete_post(self, post_id: int):
+    def delete_post(self, post_id: int, user: User):
         query = (
             select(Post).
             where(Post.id == post_id)
@@ -92,6 +103,12 @@ class PostService:
 
         if post is None:
             return False
+        
+        if post.author_id != user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="접근 권한이 없습니다."
+            )
         
         self.db.delete(post)
         self.db.commit()
