@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.services.auth_service import AuthService, get_auth_service
+from app.services.token_service import TokenService
+from app.utils.auth import get_token_expiry
 
 
 router = APIRouter()
+bearer_scheme = HTTPBearer()
 
 @router.post("/login", 
             response_model=TokenResponse,
@@ -35,3 +39,13 @@ def login(login_data: LoginRequest, auth_service: AuthService = Depends(get_auth
     
     token_data = auth_service.create_user_token(user)
     return token_data
+
+@router.post("/logout")
+def logout(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    token = credentials.credentials
+    token_expiry = get_token_expiry(token)
+    #print(token_expiry)
+    #print("------------")
+    TokenService.blacklist_token(token, token_expiry)
+
+    return {"message": "로그아웃"}
