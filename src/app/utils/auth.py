@@ -40,8 +40,6 @@ def create_refresh_token(data: dict) -> str:
     encoded_jwt = jwt.encode(refresh_payload, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
-
 def verify_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
